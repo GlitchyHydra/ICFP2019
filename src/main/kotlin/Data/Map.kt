@@ -2,30 +2,55 @@ package Data
 
 data class Square(val x: Int, val y: Int)
 
-data class Obstacle(val listOfPoints: List<Square>)
+data class Obstacles(val listOfVertices: List<Map>)
 
-data class Map(val vertices: List<Square>,
-               val left: Int,
-               val right: Int,
-               val top: Int,
-               val bottom: Int) {
-
-    val mapInMatrix = Array<IntArray>(top) { i -> (left..right).map { it -> it }.toIntArray() }
-    data class NotMarkedSquares(val listOfSquares: List<Square>)
-
-}
-
-/**
- * Check if on vertical border of map and in
- * bot pos before last or first square on this
- * border, if so, paint all by this way
- */
-/*fun Map.checkOnBorderVert(botPosition: Square): Boolean {
-    return if (botPosition.x != this.leftBottom.x) false
-    else {
-        botPosition.y == leftBottom.y + 1 || botPosition.y == leftTop.y - 1
+fun Obstacles.removeFromMap(map: Map) {
+    for (k in 0 until listOfVertices.size) {
+        val obstacle = this.listOfVertices[k]
+        val top = obstacle.top
+        val bottom = obstacle.bottom
+        val left = obstacle.left
+        val right = obstacle.right
+        for (i in 0 until top - bottom) {
+            for (j in left..right) {
+                if (obstacle.isPointInsidePolygon(Square(j, i)) == 1)
+                    map.mapInMatrix[i][j] = 0
+            }
+        }
     }
 }
-*/
 
-fun getListOfPaintedSquares(): Nothing = TODO()
+class Map(
+    val vertices: List<Square>,
+    val left: Int,
+    val right: Int,
+    val top: Int,
+    val bottom: Int
+) {
+    private val xSize = right - 1
+    private val ySize = top - 1
+    val mapInMatrix = Array(top - bottom) { i -> (left..right)
+       .map { j -> isPointInsidePolygon(Square(j, i)) }.toIntArray() }
+    var countOfPoints = xSize * ySize
+
+    data class NotMarkedSquares(val listOfSquares: List<Square>)
+
+    fun isPointInsidePolygon(point: Square): Int {
+        var (x, y) = point
+        var j = vertices.size - 1
+        var c = false
+        for (i in 0 until vertices.size) {
+            val (xi, yi) = vertices[i]
+            val (xj, yj) = vertices[j]
+            if ((((yi <= y) && (y < yj)) || ((yj <= y) && (y < yi))) &&
+                (x > (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+                c = !c
+            }
+            j = i
+        }
+        return if (c) 1 else 0
+    }
+
+}
+
+
