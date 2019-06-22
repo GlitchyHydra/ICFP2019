@@ -12,14 +12,29 @@ data class Bot constructor(var position: Square) {
         Square(position.x + 1, position.y - 1)
     )
     private var manipulatorsCount = 3
-
+    private var cource = RIGHT
     private val matrix = arrayOf<Array<Int>>(arrayOf())
     private val colored = matrix
+    private var coloredCount = 0
+    private var path = StringBuilder()
 
     constructor(list: List<String>) : this(Square(list[0].toInt(), list[1].toInt()))
 
-    private fun move(steps: Int, horizontal: Boolean): String {
-        if (steps == 0) return ""
+    enum class Direction(val value: Int?) {
+        LEFT(0),
+        UP(1),
+        RIGHT(2),
+        DOWN(3),
+        ANY(null);
+
+        companion object {
+            fun fromInt(value: Int) = values().first { it.value == value }
+        }
+    }
+
+    // Перемещение бота
+    private fun move(steps: Int, horizontal: Boolean) {
+        if (steps == 0) return
         val direction: String
         if (horizontal) {
             position = Square(position.x, position.y + steps)
@@ -42,17 +57,29 @@ data class Bot constructor(var position: Square) {
 
         }
 
-        return direction.repeat(abs(steps))
+        path.append(direction.repeat(abs(steps)))
     }
 
+    private fun moveLeft() = move(-1, true)
+
+    private fun moveRight() = move(1, true)
+
+    private fun moveUp() = move(1, false)
+
+    private fun moveDown() = move(-1, false)
+
+    // Закрашивание полей бота и егоо манипулятороово
     private fun color(x: Int, y: Int) {
-        this.colored[x][y] = 0
-        for (index in 0..manipulatorsCount){
+        if (colored[x][y] != 0) coloredCount++
+        colored[x][y] = 0
+        for (index in 0..manipulatorsCount) {
             val man = manipulaltors[index]
-            this.colored[man.x][man.y] = 0
+            if (colored[man.x][man.y] != 0) coloredCount++
+            colored[man.x][man.y] = 0
         }
     }
 
+    // Закрашивание полей по движению
     private fun colorMove(direction: Direction, steps: Int) {
         for (i in 0..steps) {
             when (direction) {
@@ -68,27 +95,26 @@ data class Bot constructor(var position: Square) {
                 UP -> {
                     color(position.x, position.y + i)
                 }
-                ANY -> TODO()
+                ANY -> TODO() // do nothing
             }
         }
     }
 
-    /**
-     * Rotate bot clockwise or counterclockwise depends on @param
-     * @param left rotate parameter
-     */
-    fun rotate(left: Boolean): String {
-        if (left) {
-            for (index in 0..manipulatorsCount) {
-                manipulaltors[index].clockwise()
+    // Поворот бота
+    fun rotate(clockwise: Boolean) {
+        path.append(
+            if (clockwise) {
+                for (index in 0..manipulatorsCount) {
+                    manipulaltors[index].clockwise()
+                }
+                "E"
+            } else {
+                for (index in 0..manipulatorsCount) {
+                    manipulaltors[index].counterClockwise()
+                }
+                "Q"
             }
-            return "E"
-        } else {
-            for (index in 0..manipulatorsCount) {
-                manipulaltors[index].counterClockwise()
-            }
-            return "Q"
-        }
+        )
     }
 
     private fun Square.clockwise(): Square {
@@ -96,6 +122,8 @@ data class Bot constructor(var position: Square) {
         val movingSquareY = this.y
         val newX = position.x + (movingSquareY - position.y)
         val newY = position.y - (movingSquareX - position.x)
+        cource = Direction.fromInt((cource.value!! + 1) % 4)
+        color(newX, newY)
         return Square(newX, newY)
     }
 
@@ -104,26 +132,34 @@ data class Bot constructor(var position: Square) {
         val movingSquareY = this.y
         val newX = position.x - (movingSquareY - position.y)
         val newY = position.y + (movingSquareX - position.x)
+        cource = Direction.fromInt((cource.value!! - 1) % 4)
+        color(newX, newY)
         return Square(newX, newY)
+    }
+
+    // Выравнивание бота отнсительно направления хода
+    private fun normalizeAngular(direction: Direction) {
+        if (cource.ordinal == direction.ordinal) return
+        val diff = cource.ordinal - direction.ordinal
+        when (abs(diff)) {
+            3, 1 -> rotate(diff < 0)
+            2 -> {
+                rotate(true)
+                rotate(true)
+            }
+        }
     }
 
     fun attachManipulator(): Nothing = TODO()
     fun attachWheels(): Nothing = TODO()
     fun startDrill(): Nothing = TODO()
+    fun createClone(): Nothing = TODO()
 
-// val pointsCount
-
-    enum class Direction(index: Int?) {
-        LEFT(0),
-        RIGHT(1),
-        DOWN(2),
-        UP(3),
-        ANY(null)
-    }
-
+    // Расчет расстояния от бота до границ
+    // Не изменяется матрица = нет учета закрашеных ячеек
     private fun countDistancesToBorders(): Array<Int> {
-        val distances = arrayOf(0, 0, 0, 0) // l, r, d, u
-        val borders = arrayOf(false, false, false, false) // l, r, d, u
+        val distances = arrayOf(0, 0, 0, 0) // l, u, r, d
+        val borders = arrayOf(false, false, false, false) // l, u, r, d
         val x = position.x
         val y = position.y
         var index = 0
@@ -149,32 +185,71 @@ data class Bot constructor(var position: Square) {
         return distances
     }
 
-    private fun findFarestDistance(distances: Array<Int>): Direction = when (distances.indexOf(distances.max())) {
-        0 -> LEFT
-        1 -> RIGHT
-        2 -> DOWN
-        3 -> UP
-        else -> ANY
+    // Нахождение наидлинейшего пути относительно бота
+    private fun findFarDistance(distances: Array<Int>): Direction = when (distances.max()) {
+        0 -> ANY
+        else -> Direction.fromInt(distances.indexOf(distances.max()))
     }
 
-    fun pathToBlank() {
+    // При случае, когда бот окружен закрашенными ячейками(Direction = ANY) находить путь до пустых ячеек
+    fun goToBlank() {
 
     }
 
-    fun buildPath(): String {
-        val path = StringBuilder()
+    // Построение пути и вывод строоки
+    fun buildPath() : String{
         var distances = countDistancesToBorders()
-        var direction = findFarestDistance(distances)
+        var direction = findFarDistance(distances)
+        // Нормализация относительно выбранного пути действия для максимальногоо заполнения поля
         path.append(
             when (direction) {
                 LEFT, RIGHT -> move(distances[1] - distances[0], true)
                 UP, DOWN -> move(distances[3] - distances[2], false)
-                ANY -> ""
+                ANY -> TODO()
             }
         )
-        var n = 0
-        while (n != 0) {
-
+        while (coloredCount != 0) {
+            // REFORMAT
+            when (direction) {
+                UP -> {
+                    if (matrix[position.x].size >= position.y + 2) {
+                        if (matrix[position.x][position.y + 2] == 0) {
+                            distances = countDistancesToBorders()
+                            direction = findFarDistance(distances)
+                        } else
+                            moveUp()
+                    }
+                }
+                RIGHT -> {
+                    if (matrix.size >= position.x + 2) {
+                        if (matrix[position.x + 2][position.y] == 0) {
+                            distances = countDistancesToBorders()
+                            direction = findFarDistance(distances)
+                        } else
+                            moveRight()
+                    }
+                }
+                DOWN -> {
+                    if (position.y - 2 >= 0) {
+                        if (matrix[position.x][position.y - 2] == 0) {
+                            distances = countDistancesToBorders()
+                            direction = findFarDistance(distances)
+                        } else
+                            moveDown()
+                    }
+                }
+                LEFT -> {
+                    if (position.x - 2 >= 0) {
+                        if (matrix[position.x - 2][position.y] == 0) {
+                            distances = countDistancesToBorders()
+                            direction = findFarDistance(distances)
+                        } else
+                            moveLeft()
+                    }
+                }
+                ANY -> goToBlank()
+            }
+            normalizeAngular(direction)
         }
         return path.toString()
     }
