@@ -1,6 +1,6 @@
-import Data.Bot
-import Data.Square
-import Data.Map
+import data.Bot
+import data.Square
+import data.Map
 import java.io.File
 
 fun main(args: Array<String>) {

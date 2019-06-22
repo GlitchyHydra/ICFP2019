@@ -1,4 +1,4 @@
-package Data
+package data
 
 data class Bot private constructor(var position: Square) {
 

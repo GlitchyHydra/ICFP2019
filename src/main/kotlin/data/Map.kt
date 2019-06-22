@@ -1,4 +1,4 @@
-package Data
+package data
 
 data class Square(val x: Int, val y: Int)
 
