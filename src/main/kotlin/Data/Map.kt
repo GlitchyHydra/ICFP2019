@@ -4,12 +4,13 @@ data class Square(val x: Int, val y: Int)
 
 data class Obstacle(val listOfPoints: List<Square>)
 
-data class Map(val points: List<Square>,
+data class Map(val vertices: List<Square>,
                val left: Int,
                val right: Int,
                val top: Int,
                val bottom: Int) {
 
+    val mapInMatrix = Array<IntArray>(top) { i -> (left..right).map { it -> it }.toIntArray() }
     data class NotMarkedSquares(val listOfSquares: List<Square>)
 
 }
@@ -26,6 +27,5 @@ data class Map(val points: List<Square>,
     }
 }
 */
-fun getListOfPaintedSquares(): Nothing = TODO()
 
-fun Gener
+fun getListOfPaintedSquares(): Nothing = TODO()
