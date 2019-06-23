@@ -17,8 +17,8 @@ fun Square.getNeighbors(map: Array<IntArray>): List<Square> {
     for (i in x - 1..x + 1) {
         for (j in y - 1..y + 1) {
             if ((x == i || y == j) && this != Square(i, j)) {
-                if (j in 0..map.size && i in 0..map[j].size)
-                    adj.add(Square(x, y))
+                if (j in 0 until map.size && i in 0 until map[0].size)
+                    adj.add(Square(i, j))
             }
         }
     }
@@ -42,13 +42,11 @@ fun shortestPath(from: Square, map: Array<IntArray>): Map<Square, SquareInfo> {
         val currentVertex = currentInfo.vertex
         for (vertex in currentVertex.getNeighbors(map)) {
             val weight = 1
-            if (weight != null) {
-                val newDistance = info[currentVertex]!!.distance + weight
-                if (info[vertex]!!.distance > newDistance) {
-                    val newInfo = SquareInfo(vertex, newDistance, currentVertex)
-                    queue.add(newInfo)
-                    info[vertex] = newInfo
-                }
+            val newDistance = info[currentVertex]!!.distance + weight
+            if (info[vertex]!!.distance > newDistance) {
+                val newInfo = SquareInfo(vertex, newDistance, currentVertex)
+                queue.add(newInfo)
+                info[vertex] = newInfo
             }
         }
     }
