@@ -29,7 +29,6 @@ fun main(args: Array<String>) {
         val solution = bot.buildPath()
         File(fileName).writeText(solution)
     }
-    //solveAll(mapList)
 }
 
 private fun parseMap(input: String): List<Square> =

@@ -6,7 +6,6 @@ import unrollPath
 import java.lang.StringBuilder
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.math.abs
 
 data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount: Int) {
@@ -42,24 +41,30 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         if (steps == 0) return
         val direction: String
         if (horizontal) {
-            position = Square(position.x, position.y + steps)
             if (steps > 0) {
                 direction = "D"
+                normalizeAngular(RIGHT)
                 colorMove(RIGHT, abs(steps))
             } else {
                 direction = "A"
+                normalizeAngular(LEFT)
                 colorMove(LEFT, abs(steps))
             }
-        } else {
             position = Square(position.x + steps, position.y)
+            moveManipulators(steps, 0)
+        } else {
             if (steps > 0) {
                 direction = "W"
+                normalizeAngular(UP)
                 colorMove(UP, abs(steps))
             } else {
                 direction = "S"
+                course = DOWN
+                normalizeAngular(DOWN)
                 colorMove(DOWN, abs(steps))
             }
-
+            position = Square(position.x, position.y + steps)
+            moveManipulators(0, steps)
         }
 
         path.append(direction.repeat(abs(steps)))
@@ -73,16 +78,27 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
 
     private fun moveDown() = move(-1, false)
 
-    // Закрашивание полей бота и его манипулятороово
+    private fun moveManipulators(stepX: Int, stepY: Int) {
+        for (index in 0 until manipulators.size) {
+            val man = manipulators[index]
+            manipulators[index] = Square(man.x + stepX, man.y + stepY)
+        }
+    }
+
+    // Закрашивание полей бота и его манипуляторов
     private fun color(x: Int, y: Int) {
-        if (matrix[y][x] != 0) {
-            coloredCount++
-            matrix[y][x] = 2
+        if (matrix.size > y && x >= 0 && y >= 0 && matrix[y].size > x) {
+            if (matrix[y][x] != 0) {
+                coloredCount++
+                matrix[y][x] = 2
+            }
         }
         for (man in manipulators) {
-            if (matrix[man.y][man.x] != 0) {
-                coloredCount++
-                matrix[man.y][man.x] = 2
+            if (man.y in 0 until matrix.size && man.x in 0 until matrix[man.y].size) {
+                if (matrix[man.y][man.x] != 0) {
+                    coloredCount++
+                    matrix[man.y][man.x] = 2
+                }
             }
         }
     }
@@ -112,14 +128,20 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
     fun rotate(clockwise: Boolean) {
         path.append(
             if (clockwise) {
-                for (man in manipulators) {
-                    man.clockwise()
+                for (index in 0 until manipulators.size) {
+                    val man = manipulators[index]
+                    color(man.x, man.y)
+                    manipulators[index] = man.clockwise()
                 }
+                course = Direction.fromInt((course.value + 1) % 4)
                 "E"
             } else {
-                for (man in manipulators) {
-                    man.counterClockwise()
+                for (index in 0 until manipulators.size) {
+                    val man = manipulators[index]
+                    color(man.x, man.y)
+                    manipulators[index] = man.counterClockwise()
                 }
+                course = Direction.fromInt((course.value - 1) % 4)
                 "Q"
             }
         )
@@ -130,8 +152,6 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         val movingSquareY = this.y
         val newX = position.x + (movingSquareY - position.y)
         val newY = position.y - (movingSquareX - position.x)
-        course = Direction.fromInt((course.value + 1) % 4)
-        color(newX, newY)
         return Square(newX, newY)
     }
 
@@ -140,8 +160,6 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         val movingSquareY = this.y
         val newX = position.x - (movingSquareY - position.y)
         val newY = position.y + (movingSquareX - position.x)
-        course = Direction.fromInt((course.value - 1) % 4)
-        color(newX, newY)
         return Square(newX, newY)
     }
 
@@ -171,25 +189,25 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         val borders = arrayOf(false, false, false, false) // l, u, r, d
         val x = position.x
         val y = position.y
-        var index = 0
+        var index = 1
         while (!borders.all { it }) {
-            if (matrix[y].size >= x + index) {
-                if (matrix[y][x + index] > 0 && !borders[3]) {
-                    distances[3]++
-                    if (matrix[y][x + index] == 2) colored[3]++
-                } else
-                    borders[3] = true
-            } else
-                borders[3] = true
-            if (x - index >= 0) {
-                if (matrix[y][x - index] > 0 && !borders[2]) {
+            if (matrix[y].size > x + index) { // R
+                if (matrix[y][x + index] > 0 && !borders[2]) {
                     distances[2]++
-                    if (matrix[y][x - index] == 2) colored[2]++
+                    if (matrix[y][x + index] == 2) colored[2]++
                 } else
                     borders[2] = true
             } else
                 borders[2] = true
-            if (matrix.size >= y + index) {
+            if (x - index >= 0) { // L
+                if (matrix[y][x - index] > 0 && !borders[0]) {
+                    distances[0]++
+                    if (matrix[y][x - index] == 2) colored[0]++
+                } else
+                    borders[0] = true
+            } else
+                borders[0] = true
+            if (matrix.size > y + index) { // U
                 if (matrix[y + index][x] > 0 && !borders[1]) {
                     distances[1]++
                     if (matrix[y + index][x] == 2) colored[1]++
@@ -197,19 +215,19 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
                     borders[1] = true
             } else
                 borders[1] = true
-            if (y - index >= 0) {
-                if (matrix[y - index][x] > 0 && !borders[0]) {
-                    distances[0]++
-                    if (matrix[y - index][x] == 2) colored[0]++
+            if (y - index >= 0) { // D
+                if (matrix[y - index][x] > 0 && !borders[3]) {
+                    distances[3]++
+                    if (matrix[y - index][x] == 2) colored[3]++
                 } else
-                    borders[0] = true
+                    borders[3] = true
             } else
-                borders[0] = true
+                borders[3] = true
             index++
         }
-        colored.forEachIndexed { _, it ->
-            if (it == distances[index])
-                distances[index] = 0
+        colored.forEachIndexed { ind, it ->
+            if (it == distances[ind])
+                distances[ind] = 0
         }
         return distances
     }
@@ -222,9 +240,9 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         }
 
     // При случае, когда бот окружен закрашенными ячейками(Direction = ANY) находить путь до пустых ячеек
-    private fun goToBlank() {
+    private fun goToBlank(): Boolean {
         val blank = bfs()
-        if (blank.x == -1 && blank.y == -1) TODO() // ???
+        if (blank.x == -1 && blank.y == -1) return false
         for (square in findPathToBlank(blank)) {
             val diffX = square.x - position.x
             val diffY = square.y - position.y
@@ -243,6 +261,7 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
                 }
             }
         }
+        return true
     }
 
     fun findPathToBlank(goal: Square) =
@@ -250,10 +269,11 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
 
     // Поиск незакрашенной точки
     private fun bfs(): Square {
-        val visited: Array<BooleanArray> = arrayOf(booleanArrayOf())
+        val visited: Array<BooleanArray> = Array(matrix.size) { BooleanArray(matrix[0].size) { false } }
         val queue: Queue<Square> = ArrayDeque()
         queue.add(position)
-        visited[position.y][position.x] = true
+        visited[position.y][position.x] =
+            true // Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1
         while (!queue.isEmpty()) {
             val el = queue.poll()
             val adjacent = findAdjacent(el)
@@ -271,80 +291,105 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
     // Поиск соседей
     private fun findAdjacent(point: Square): ArrayList<Square> {
         val adjacent: ArrayList<Square> = arrayListOf()
-        if (matrix.size >= point.y + 1 && matrix[point.y + 1][point.x] > 0)
-            adjacent.add(Square(point.y + 1, point.x))
+        if (matrix.size - 1 > point.y + 1 && matrix[point.y + 1][point.x] > 0)
+            adjacent.add(Square(point.x, point.y + 1))
         if (point.y - 1 >= 0 && matrix[point.y - 1][point.x] > 0)
-            adjacent.add(Square(point.y - 1, point.x))
-        if (matrix[point.y].size >= point.x + 1 && matrix[point.y][point.x + 1] > 0)
-            adjacent.add(Square(point.y, point.x + 1))
+            adjacent.add(Square(point.x, point.y - 1))
+        if (matrix[point.y].size - 1 > point.x + 1 && matrix[point.y][point.x + 1] > 0)
+            adjacent.add(Square(point.x + 1, point.y))
         if (point.x - 1 >= 0 && matrix[point.y][point.x - 1] > 0)
-            adjacent.add(Square(point.y, point.x - 1))
+            adjacent.add(Square(point.x - 1, point.y))
         return adjacent
     }
 
     // Нормализация относительно выбранного пути действия для максимальногоо заполнения поля
     private fun normalizePosition(direction: Direction, distances: Array<Int>) {
-        path.append(
-            when (direction) {
-                LEFT, RIGHT -> move(distances[1] - distances[0], true)
-                UP, DOWN -> move(distances[3] - distances[2], false)
-                ANY -> TODO()
-            }
-        )
+        val diffX = (distances[0] - distances[2]) / 2
+        val diffY = (distances[1] - distances[3]) / 2
+        when (direction) {
+            LEFT, RIGHT -> move(diffY, false)
+            UP, DOWN -> move(diffX, true)
+            ANY -> TODO()
+        }
+
     }
 
     // Построение пути и вывод строоки
     fun buildPath(): String {
+        var stop = true
         var distances = countDistancesToBorders()
         var direction = findFarDistance(distances)
         normalizePosition(direction, distances)
-        while (coloredCount != blankCount) {
+        while (stop) {
             // REFORMAT
             when (direction) {
                 UP -> {
-                    if (matrix[position.y].size >= position.x + 2) {
+                    moveUp()
+                    if (matrix.size - 1 >= position.y + 2) {
                         if (matrix[position.y + 2][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
-                        } else
-                            moveUp()
+                        }
+                    } else {
+                        distances = countDistancesToBorders()
+                        direction = findFarDistance(distances)
                     }
                 }
                 RIGHT -> {
-                    if (matrix.size >= position.y + 2) {
+                    moveRight()
+                    if (matrix[position.y].size - 1 > position.x + 2) {
                         if (matrix[position.y][position.x + 2] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
-                        } else
-                            moveRight()
+                        }
+                    } else {
+                        distances = countDistancesToBorders()
+                        direction = findFarDistance(distances)
                     }
                 }
                 DOWN -> {
-                    if (position.x - 2 >= 0) {
+                    moveDown()
+                    if (position.y - 2 >= 0) {
                         if (matrix[position.y - 2][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
-                        } else
-                            moveDown()
+                        }
+                    } else {
+                        distances = countDistancesToBorders()
+                        direction = findFarDistance(distances)
                     }
                 }
                 LEFT -> {
-                    if (position.y - 2 >= 0) {
+                    moveLeft()
+                    if (position.x - 2 >= 0) {
                         if (matrix[position.y][position.x - 2] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
-                        } else
-                            moveLeft()
+                        }
+                    } else {
+                        distances = countDistancesToBorders()
+                        direction = findFarDistance(distances)
                     }
                 }
                 ANY -> {
-                    goToBlank()
+                    stop = goToBlank()
                     distances = countDistancesToBorders()
                     direction = findFarDistance(distances)
                 }
+
             }
             normalizeAngular(direction)
         }
         return path.toString()
+    }
+
+    private fun printMatrix(direction: Direction) {
+        for (row in matrix.size - 1 downTo 0) {
+            for (column in matrix[row])
+                print("$column ")
+            println()
+
+        }
+        println("+++++++MOVE:$direction")
     }
 }
