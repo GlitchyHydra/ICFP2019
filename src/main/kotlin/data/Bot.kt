@@ -9,7 +9,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.abs
 
-data class Bot(var position: Square, val matrix: Array<Array<Int>>, val blankCount: Int) {
+data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount: Int) {
     /*
     0 - obstacle
     1 - blank
@@ -233,9 +233,9 @@ data class Bot(var position: Square, val matrix: Array<Array<Int>>, val blankCou
         }
     }
 
-    fun findPathToBlank(goal: Square, map: Array<IntArray>) =
-        shortestPath(this.position, map).unrollPath(goal)
-    
+    fun findPathToBlank(goal: Square) =
+        shortestPath(this.position, matrix).unrollPath(goal)
+
     // Поиск незакрашенной точки
     private fun bfs(): Square {
         val visited: Array<BooleanArray> = arrayOf(booleanArrayOf())
