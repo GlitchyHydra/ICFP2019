@@ -1,5 +1,4 @@
-import data.Map.*
-import data.Square
+import data.*
 import java.io.File
 import java.lang.IllegalArgumentException
 import java.util.*
@@ -22,7 +21,14 @@ fun main(args: Array<String>) {
             )
         }
     }
-
+    for (i in 1..150) {
+        val map = mapList[i - 1]
+        //val solution =
+        val bot = Bot(map.start, map.mapInMatrix, map.numberOfUnpainted)
+        val fileName = String.format("solutions/prob-%03d.sol", i)
+        val solution = bot.buildPath()
+        File(fileName).writeText(solution)
+    }
     //solveAll(mapList)
 }
 
