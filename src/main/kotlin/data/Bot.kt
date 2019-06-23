@@ -3,27 +3,24 @@ package data
 import data.Bot.Direction.*
 import java.lang.StringBuilder
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 
-data class Bot(var position: Square) {
+data class Bot(var position: Square, val matrix: Array<Array<Int>>, val blankCount: Int) {
     /*
     0 - obstacle
     1 - blank
     2 - colored
+    3.. - boosters
      */
-    private var manipulaltors = arrayListOf(
+    private var manipulators = arrayListOf(
         Square(position.x + 1, position.y + 1),
         Square(position.x + 1, position.y),
         Square(position.x + 1, position.y - 1)
     )
-    private var manipulatorsCount = 3
     private var course = RIGHT
-    private val matrix = arrayOf(arrayOf<Int>())
     private var coloredCount = 0
-    val blankCount = 0 // 0 is temp
     private var path = StringBuilder()
-
-    constructor(list: List<String>) : this(Square(list[0].toInt(), list[1].toInt()))
 
     enum class Direction(val value: Int) {
         LEFT(0),
@@ -79,8 +76,7 @@ data class Bot(var position: Square) {
             coloredCount++
             matrix[y][x] = 2
         }
-        for (index in 0..manipulatorsCount) {
-            val man = manipulaltors[index]
+        for (man in manipulators) {
             if (matrix[man.y][man.x] != 0) {
                 coloredCount++
                 matrix[man.y][man.x] = 2
@@ -113,13 +109,13 @@ data class Bot(var position: Square) {
     fun rotate(clockwise: Boolean) {
         path.append(
             if (clockwise) {
-                for (index in 0..manipulatorsCount) {
-                    manipulaltors[index].clockwise()
+                for (man in manipulators) {
+                    man.clockwise()
                 }
                 "E"
             } else {
-                for (index in 0..manipulatorsCount) {
-                    manipulaltors[index].counterClockwise()
+                for (man in manipulators) {
+                    man.counterClockwise()
                 }
                 "Q"
             }
@@ -212,13 +208,37 @@ data class Bot(var position: Square) {
 
     // При случае, когда бот окружен закрашенными ячейками(Direction = ANY) находить путь до пустых ячеек
     private fun goToBlank() {
-        val blank = BFS()
+        val blank = bfs()
         if (blank.x == -1 && blank.y == -1) TODO() // ???
+        for (square in findPathToBlank(blank)) {
+            val diffX = square.x - position.x
+            val diffY = square.y - position.y
+            when {
+                diffX == 0 ->{
+                    when{
+                        diffY > 0 -> moveUp()
+                        diffY < 0 -> moveDown()
+                    }
+                }
+                diffY == 0 -> {
+                    when{
+                        diffX > 0 -> moveRight()
+                        diffX < 0 -> moveLeft()
+                    }
+                }
+            }
+        }
+    }
 
+    // Поиск пути от позиции до точки (A* algorithm)
+    private fun findPathToBlank(blank: Square): ArrayList<Square> {
+        val pathToBlank: ArrayList<Square> = arrayListOf()
+
+        return pathToBlank
     }
 
     // Поиск незакрашенной точки
-    private fun BFS(): Square {
+    private fun bfs(): Square {
         val visited: Array<BooleanArray> = arrayOf(booleanArrayOf())
         val queue: Queue<Square> = ArrayDeque()
         queue.add(position)
@@ -237,6 +257,7 @@ data class Bot(var position: Square) {
         return Square(-1, -1)
     }
 
+    // Поиск соседей
     private fun findAdjacent(point: Square): ArrayList<Square> {
         val adjacent: ArrayList<Square> = arrayListOf()
         if (matrix.size >= point.y + 1 && matrix[point.y + 1][point.x] > 0)
@@ -305,7 +326,11 @@ data class Bot(var position: Square) {
                             moveLeft()
                     }
                 }
-                ANY -> goToBlank()
+                ANY -> {
+                    goToBlank()
+                    distances = countDistancesToBorders()
+                    direction = findFarDistance(distances)
+                }
             }
             normalizeAngular(direction)
         }
