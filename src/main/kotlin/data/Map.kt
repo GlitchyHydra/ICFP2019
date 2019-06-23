@@ -14,23 +14,27 @@ data class ParsedMap(
     var maxX: Int = 0,
     var maxY: Int = 0
 ) {
-    val mapInMatrix: Array<IntArray> get()
-    = Array(maxY) { i -> (0..maxX).map { j-> isPointInsideMap(Square(j ,i)) }.toIntArray() }
+    var numberOfUnpainted = 0
+    val mapInMatrix: Array<IntArray>
+        get() = (maxY - 1 downTo 0).map { i -> (1..maxX)
+            .map { j -> isPointInsideMap(Square(j, i)) }.toIntArray() }.toTypedArray()
 }
 
 fun ParsedMap.isPointInsideMap(point: Square): Int {
     for (booster in boosters) {
-        if (booster.square == point)
+        if (booster.square == point) {
+            numberOfUnpainted++
             return booster.type.ordinal + 3
+        }
     }
     if (isPointInsidePolygon(point, vertices)) {
         for (obstacle in obstacles) {
             if (isPointInsidePolygon(point, obstacle.squares))
                 return 0
         }
+        numberOfUnpainted++
         return 1
-    }
-    else return 0
+    } else return 0
 }
 
 fun isPointInsidePolygon(point: Square, vertices: List<Square>): Boolean {
@@ -41,7 +45,8 @@ fun isPointInsidePolygon(point: Square, vertices: List<Square>): Boolean {
         val (xi, yi) = vertices[i]
         val (xj, yj) = vertices[j]
         if ((((yi <= y) && (y < yj)) || ((yj <= y) && (y < yi))) &&
-            (x > (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+            (x > (xj - xi) * (y - yi) / (yj - yi) + xi)
+        ) {
             c = !c
         }
         j = i
