@@ -14,8 +14,8 @@ class SquareInfo(
 fun Square.getNeighbors(map: Array<IntArray>): List<Square> {
     val (x, y) = this
     val adj = mutableListOf<Square>()
-    for (i in x - 1 .. x + 1) {
-        for (j in y - 1 .. y + 1) {
+    for (i in x - 1..x + 1) {
+        for (j in y - 1..y + 1) {
             if ((x == i || y == j) && this != Square(i, j)) {
                 if (j in 0..map.size && i in 0..map[j].size)
                     adj.add(Square(x, y))
