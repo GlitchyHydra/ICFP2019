@@ -1,6 +1,6 @@
-package Data
+package data
 
-import Data.Bot.Direction.*
+import data.Bot.Direction.*
 import java.lang.StringBuilder
 import kotlin.math.abs
 
@@ -71,11 +71,11 @@ data class Bot (var position: Square) {
     // Закрашивание полей бота и егоо манипулятороово
     private fun color(x: Int, y: Int) {
         if (colored[x][y] != 0) coloredCount++
-        colored[x][y] = 0
+        colored[x][y] = 2
         for (index in 0..manipulatorsCount) {
             val man = manipulaltors[index]
             if (colored[man.x][man.y] != 0) coloredCount++
-            colored[man.x][man.y] = 0
+            colored[man.x][man.y] = 2
         }
     }
 

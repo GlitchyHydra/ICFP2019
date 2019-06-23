@@ -1,5 +1,5 @@
-package Graph
-import Graph.Graph.*
+package graph
+import graph.Graph.*
 
 class GraphBuilder {
 
