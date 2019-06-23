@@ -26,12 +26,12 @@ data class Bot(var position: Square) {
 
     constructor(list: List<String>) : this(Square(list[0].toInt(), list[1].toInt()))
 
-    enum class Direction(val value: Int?) {
+    enum class Direction(val value: Int) {
         LEFT(0),
         UP(1),
         RIGHT(2),
         DOWN(3),
-        ANY(null);
+        ANY(-1);
 
         companion object {
             fun fromInt(value: Int) = values().first { it.value == value }
@@ -76,15 +76,15 @@ data class Bot(var position: Square) {
 
     // Закрашивание полей бота и его манипулятороово
     private fun color(x: Int, y: Int) {
-        if (matrix[x][y] != 0) {
+        if (matrix[y][x] != 0) {
             coloredCount++
-            matrix[x][y] = 2
+            matrix[y][x] = 2
         }
         for (index in 0..manipulatorsCount) {
             val man = manipulaltors[index]
-            if (matrix[man.x][man.y] != 0) {
+            if (matrix[man.y][man.x] != 0) {
                 coloredCount++
-                matrix[man.x][man.y] = 2
+                matrix[man.y][man.x] = 2
             }
         }
     }
@@ -132,7 +132,7 @@ data class Bot(var position: Square) {
         val movingSquareY = this.y
         val newX = position.x + (movingSquareY - position.y)
         val newY = position.y - (movingSquareX - position.x)
-        course = Direction.fromInt((course.value!! + 1) % 4)
+        course = Direction.fromInt((course.value + 1) % 4)
         color(newX, newY)
         return Square(newX, newY)
     }
@@ -142,15 +142,15 @@ data class Bot(var position: Square) {
         val movingSquareY = this.y
         val newX = position.x - (movingSquareY - position.y)
         val newY = position.y + (movingSquareX - position.x)
-        course = Direction.fromInt((course.value!! - 1) % 4)
+        course = Direction.fromInt((course.value - 1) % 4)
         color(newX, newY)
         return Square(newX, newY)
     }
 
     // Выравнивание бота отнсительно направления хода
     private fun normalizeAngular(direction: Direction) {
-        if (course.ordinal == direction.ordinal) return
-        val diff = course.ordinal - direction.ordinal
+        if (direction.value == -1 || course.value == direction.value) return
+        val diff = course.value - direction.value
         when (abs(diff)) {
             3, 1 -> rotate(diff < 0)
             2 -> {
@@ -175,24 +175,24 @@ data class Bot(var position: Square) {
         val y = position.y
         var index = 0
         while (!borders.all { it }) {
-            if (matrix[x + index][y] > 0 && !borders[3]) {
+            if (matrix[y][x + index] > 0 && !borders[3]) {
                 distances[3]++
-                if (matrix[x + index][y] == 2) colored[3]++
+                if (matrix[y][x + index] == 2) colored[3]++
             } else
                 borders[3] = true
-            if (matrix[x - index][y] > 0 && !borders[2]) {
+            if (matrix[y][x - index] > 0 && !borders[2]) {
                 distances[2]++
-                if (matrix[x - index][y] == 2) colored[2]++
+                if (matrix[y][x - index] == 2) colored[2]++
             } else
                 borders[2] = true
-            if (matrix[x][y + index] > 0 && !borders[1]) {
+            if (matrix[y + index][x] > 0 && !borders[1]) {
                 distances[1]++
-                if (matrix[x][y + index] == 2) colored[1]++
+                if (matrix[y + index][x] == 2) colored[1]++
             } else
                 borders[1] = true
-            if (matrix[x][y - index] > 0 && !borders[0]) {
+            if (matrix[y - index][x] > 0 && !borders[0]) {
                 distances[0]++
-                if (matrix[x][y - index] == 2) colored[0]++
+                if (matrix[y - index][x] == 2) colored[0]++
             } else
                 borders[0] = true
             index++
@@ -205,10 +205,11 @@ data class Bot(var position: Square) {
     }
 
     // Нахождение наидлинейшего пути относительно бота
-    private fun findFarDistance(distances: Array<Int>): Direction = when (distances.max()) {
-        0 -> ANY
-        else -> Direction.fromInt(distances.indexOf(distances.max()))
-    }
+    private fun findFarDistance(distances: Array<Int>): Direction =
+        when (distances.max()) {
+            0 -> ANY
+            else -> Direction.fromInt(distances.indexOf(distances.max()))
+        }
 
     // При случае, когда бот окружен закрашенными ячейками(Direction = ANY) находить путь до пустых ячеек
     private fun goToBlank() {
@@ -235,8 +236,8 @@ data class Bot(var position: Square) {
             // REFORMAT
             when (direction) {
                 UP -> {
-                    if (matrix[position.x].size >= position.y + 2) {
-                        if (matrix[position.x][position.y + 2] == 0) {
+                    if (matrix[position.y].size >= position.x + 2) {
+                        if (matrix[position.y + 2][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         } else
@@ -244,8 +245,8 @@ data class Bot(var position: Square) {
                     }
                 }
                 RIGHT -> {
-                    if (matrix.size >= position.x + 2) {
-                        if (matrix[position.x + 2][position.y] == 0) {
+                    if (matrix.size >= position.y + 2) {
+                        if (matrix[position.y][position.x + 2] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         } else
@@ -253,8 +254,8 @@ data class Bot(var position: Square) {
                     }
                 }
                 DOWN -> {
-                    if (position.y - 2 >= 0) {
-                        if (matrix[position.x][position.y - 2] == 0) {
+                    if (position.x - 2 >= 0) {
+                        if (matrix[position.y - 2][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         } else
@@ -262,8 +263,8 @@ data class Bot(var position: Square) {
                     }
                 }
                 LEFT -> {
-                    if (position.x - 2 >= 0) {
-                        if (matrix[position.x - 2][position.y] == 0) {
+                    if (position.y - 2 >= 0) {
+                        if (matrix[position.y][position.x - 2] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         } else
