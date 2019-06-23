@@ -3,7 +3,6 @@ package data
 import data.Bot.Direction.*
 import java.lang.StringBuilder
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.abs
 
 data class Bot(var position: Square) {
@@ -212,8 +211,39 @@ data class Bot(var position: Square) {
 
     // При случае, когда бот окружен закрашенными ячейками(Direction = ANY) находить путь до пустых ячеек
     private fun goToBlank() {
+        val blank = BFS()
+        if (blank.x == -1 && blank.y == -1) TODO() // ???
 
     }
+
+    // Поиск незакрашенной точки
+    private fun BFS() : Square{
+        val visited: Array<BooleanArray> = arrayOf(booleanArrayOf())
+        val queue: Queue<Square> = ArrayDeque()
+        queue.add(position)
+        visited[position.y][position.x] = true
+        while (!queue.isEmpty()) {
+            val el = queue.poll()
+            val adjacent = findAdjacents(el)
+            for (adjEl in adjacent){
+                if (adjEl.x == -1 && adjEl.y == -1) continue
+                if (matrix[adjEl.y][adjEl.x] == 1) return Square(adjEl.x, adjEl.y)
+                if (!visited[adjEl.y][adjEl.x]){
+                    visited[adjEl.y][adjEl.x] = true
+                    queue.add(adjEl)
+                }
+            }
+        }
+        return Square(-1, -1)
+    }
+
+    private fun findAdjacents(point: Square) : Array<Square> =
+        arrayOf(
+            if (matrix[point.y + 1][point.x] > 0) Square(point.y + 1, point.x) else Square(-1, -1),
+            if (matrix[point.y - 1][point.x] > 0) Square(point.y - 1, point.x) else Square(-1, -1),
+            if (matrix[point.y][point.x + 1] > 0) Square(point.y, point.x + 1) else Square(-1, -1),
+            if (matrix[point.y][point.x - 1] > 0) Square(point.y, point.x - 1) else Square(-1, -1)
+        )
 
     // Нормализация относительно выбранного пути действия для максимальногоо заполнения поля
     private fun normalizePosition(direction: Direction, distances: Array<Int>) {
