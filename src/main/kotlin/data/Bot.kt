@@ -173,24 +173,36 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         val y = position.y
         var index = 0
         while (!borders.all { it }) {
-            if (matrix[y][x + index] > 0 && !borders[3]) {
-                distances[3]++
-                if (matrix[y][x + index] == 2) colored[3]++
+            if (matrix[y].size >= x + index) {
+                if (matrix[y][x + index] > 0 && !borders[3]) {
+                    distances[3]++
+                    if (matrix[y][x + index] == 2) colored[3]++
+                } else
+                    borders[3] = true
             } else
                 borders[3] = true
-            if (matrix[y][x - index] > 0 && !borders[2]) {
-                distances[2]++
-                if (matrix[y][x - index] == 2) colored[2]++
+            if (x - index >= 0) {
+                if (matrix[y][x - index] > 0 && !borders[2]) {
+                    distances[2]++
+                    if (matrix[y][x - index] == 2) colored[2]++
+                } else
+                    borders[2] = true
             } else
                 borders[2] = true
-            if (matrix[y + index][x] > 0 && !borders[1]) {
-                distances[1]++
-                if (matrix[y + index][x] == 2) colored[1]++
+            if (matrix.size >= y + index) {
+                if (matrix[y + index][x] > 0 && !borders[1]) {
+                    distances[1]++
+                    if (matrix[y + index][x] == 2) colored[1]++
+                } else
+                    borders[1] = true
             } else
                 borders[1] = true
-            if (matrix[y - index][x] > 0 && !borders[0]) {
-                distances[0]++
-                if (matrix[y - index][x] == 2) colored[0]++
+            if (y - index >= 0) {
+                if (matrix[y - index][x] > 0 && !borders[0]) {
+                    distances[0]++
+                    if (matrix[y - index][x] == 2) colored[0]++
+                } else
+                    borders[0] = true
             } else
                 borders[0] = true
             index++
@@ -217,14 +229,14 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
             val diffX = square.x - position.x
             val diffY = square.y - position.y
             when {
-                diffX == 0 ->{
-                    when{
+                diffX == 0 -> {
+                    when {
                         diffY > 0 -> moveUp()
                         diffY < 0 -> moveDown()
                     }
                 }
                 diffY == 0 -> {
-                    when{
+                    when {
                         diffX > 0 -> moveRight()
                         diffX < 0 -> moveLeft()
                     }
