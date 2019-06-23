@@ -27,5 +27,3 @@ data class Map(val points: List<Square>,
 }
 */
 fun getListOfPaintedSquares(): Nothing = TODO()
-
-fun Gener

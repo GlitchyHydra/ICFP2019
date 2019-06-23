@@ -4,7 +4,7 @@ import Data.Bot.Direction.*
 import java.lang.StringBuilder
 import kotlin.math.abs
 
-data class Bot constructor(var position: Square) {
+data class Bot (var position: Square) {
 
     private var manipulaltors = arrayListOf(
         Square(position.x + 1, position.y + 1),
@@ -13,7 +13,7 @@ data class Bot constructor(var position: Square) {
     )
     private var manipulatorsCount = 3
     private var cource = RIGHT
-    private val matrix = arrayOf<Array<Int>>(arrayOf())
+    private val matrix = arrayOf(arrayOf<Int>())
     private val colored = matrix
     private var coloredCount = 0
     private var path = StringBuilder()
@@ -197,7 +197,7 @@ data class Bot constructor(var position: Square) {
     }
 
     // Построение пути и вывод строоки
-    fun buildPath() : String{
+    fun buildPath() : String {
         var distances = countDistancesToBorders()
         var direction = findFarDistance(distances)
         // Нормализация относительно выбранного пути действия для максимальногоо заполнения поля
