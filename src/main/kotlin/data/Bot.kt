@@ -1,9 +1,12 @@
 package data
 
 import data.Bot.Direction.*
+import shortestPath
+import unrollPath
 import java.lang.StringBuilder
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.math.abs
 
 data class Bot(var position: Square, val matrix: Array<Array<Int>>, val blankCount: Int) {
@@ -230,13 +233,9 @@ data class Bot(var position: Square, val matrix: Array<Array<Int>>, val blankCou
         }
     }
 
-    // Поиск пути от позиции до точки (A* algorithm)
-    private fun findPathToBlank(blank: Square): ArrayList<Square> {
-        val pathToBlank: ArrayList<Square> = arrayListOf()
-
-        return pathToBlank
-    }
-
+    fun findPathToBlank(goal: Square, map: Array<IntArray>) =
+        shortestPath(this.position, map).unrollPath(goal)
+    
     // Поиск незакрашенной точки
     private fun bfs(): Square {
         val visited: Array<BooleanArray> = arrayOf(booleanArrayOf())
