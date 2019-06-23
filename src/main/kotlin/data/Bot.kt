@@ -218,18 +218,17 @@ data class Bot(var position: Square) {
     }
 
     // Поиск незакрашенной точки
-    private fun BFS() : Square{
+    private fun BFS(): Square {
         val visited: Array<BooleanArray> = arrayOf(booleanArrayOf())
         val queue: Queue<Square> = ArrayDeque()
         queue.add(position)
         visited[position.y][position.x] = true
         while (!queue.isEmpty()) {
             val el = queue.poll()
-            val adjacent = findAdjacents(el)
-            for (adjEl in adjacent){
-                if (adjEl.x == -1 && adjEl.y == -1) continue
+            val adjacent = findAdjacent(el)
+            for (adjEl in adjacent) {
                 if (matrix[adjEl.y][adjEl.x] == 1) return Square(adjEl.x, adjEl.y)
-                if (!visited[adjEl.y][adjEl.x]){
+                if (!visited[adjEl.y][adjEl.x]) {
                     visited[adjEl.y][adjEl.x] = true
                     queue.add(adjEl)
                 }
@@ -238,13 +237,18 @@ data class Bot(var position: Square) {
         return Square(-1, -1)
     }
 
-    private fun findAdjacents(point: Square) : Array<Square> =
-        arrayOf(
-            if (matrix[point.y + 1][point.x] > 0) Square(point.y + 1, point.x) else Square(-1, -1),
-            if (matrix[point.y - 1][point.x] > 0) Square(point.y - 1, point.x) else Square(-1, -1),
-            if (matrix[point.y][point.x + 1] > 0) Square(point.y, point.x + 1) else Square(-1, -1),
-            if (matrix[point.y][point.x - 1] > 0) Square(point.y, point.x - 1) else Square(-1, -1)
-        )
+    private fun findAdjacent(point: Square): ArrayList<Square> {
+        val adjacent: ArrayList<Square> = arrayListOf()
+        if (matrix.size >= point.y + 1 && matrix[point.y + 1][point.x] > 0)
+            adjacent.add(Square(point.y + 1, point.x))
+        if (point.y - 1 >= 0 && matrix[point.y - 1][point.x] > 0)
+            adjacent.add(Square(point.y - 1, point.x))
+        if (matrix[point.y].size >= point.x + 1 && matrix[point.y][point.x + 1] > 0)
+            adjacent.add(Square(point.y, point.x + 1))
+        if (point.x - 1 >= 0 && matrix[point.y][point.x - 1] > 0)
+            adjacent.add(Square(point.y, point.x - 1))
+        return adjacent
+    }
 
     // Нормализация относительно выбранного пути действия для максимальногоо заполнения поля
     private fun normalizePosition(direction: Direction, distances: Array<Int>) {
