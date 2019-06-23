@@ -1,46 +1,68 @@
-import data.Bot
-import data.Square
-import data.Map
+import data.*
 import java.io.File
+import java.lang.IllegalArgumentException
+import java.util.*
 
 fun main(args: Array<String>) {
+    val mapList = LinkedList<ParsedMap>()
     for (i in 1..150) {
-        val fileName = "tasks/prob-${numberToString(i)}.desc"
-        val fileList = File(fileName).readLines()
-            .fold("") {prev, next -> prev + next}.replace(")", "")
-            .replace("(", "").split("#")
-        val listOfCoordinates = fileList[0]
-        val bot = Bot(fileList[1].split(","))
-        val map = separatePairs(listOfCoordinates)
-        //answer
+        val fileName = String.format("tasks/prob-%03d.desc", i)
+        File(fileName).readText().split("#").let { parts ->
+            mapList.add(
+                ParsedMap(
+                    parseMap(parts[0]),
+                    parseStart(parts[1]),
+                    parseObstacles(parts[2]),
+                    parseBoosters(parts[3])
+                ).apply {
+                    maxX = this.vertices.maxBy { it.x }!!.x
+                    maxY = this.vertices.maxBy { it.y }!!.y
+                }
+            )
+        }
     }
-
+    for (i in 1..150) {
+        val map = mapList[i - 1]
+        //val solution =
+        val bot = Bot(map.start, map.mapInMatrix, map.numberOfUnpainted)
+        val fileName = String.format("solutions/prob-%03d.sol", i)
+        val solution = bot.buildPath()
+        File(fileName).writeText(solution)
+    }
+    //solveAll(mapList)
 }
 
-fun separatePairs(str: String): Map {
-    val foldedList = str
-    val listOfCoord = foldedList.split(",")
-    var minX = Int.MAX_VALUE
-    var maxX = Int.MIN_VALUE
-    var minY = Int.MAX_VALUE
-    var maxY = Int.MIN_VALUE
-    val mapList = mutableListOf<Square>()
-    var i = 1
-    while(i < listOfCoord.size) {
-        val x = listOfCoord[i - 1].toInt()
-        val y = listOfCoord[i].toInt()
-        if (x < minX) minX = x
-        if (x > maxX) maxX = x
-        if (y < minY) minY = y
-        if (y > maxY) maxY = y
-        mapList.add(Square(x, y))
-        i += 2
-    }
-    return Map(mapList as List<Square>, minX, maxX, maxY, minY)
-}
+private fun parseMap(input: String): List<Square> =
+    parseSquares(input)
 
-fun numberToString(number: Int) = when {
-        number < 10 -> "00$number"
-        number in 10..99 -> "0$number"
-        else -> "$number"
-    }
+private fun parseStart(input: String): Square =
+    parseSquare(input)
+
+private fun parseObstacles(input: String): List<Obstacle> =
+    if (input.isEmpty()) emptyList() else input.split(";").map { Obstacle(parseSquares(it)) }
+
+private fun parseBoosters(input: String): List<Booster> =
+    if (input.isEmpty()) emptyList() else input.split(";").map { Booster(parseSquare(it), parseBoosterType(it[0])) }
+
+/**
+ * @param input - поступает что то вроде этого (2,5),(5,5),(25,69) - потом это разбивается на "2,5),"
+ */
+private fun parseSquares(input: String) =
+    input.split("(")
+        .filter { it != "" }
+        .map { parseSquare(it) }
+
+private fun parseSquare(input: String) =
+    Regex("""\d+""")
+        .findAll(input)
+        .map { it.value }
+        .toList()
+        .let { Square(it[0].toInt(), it[1].toInt()) }
+
+fun parseBoosterType(char: Char) = when (char.toLowerCase()) {
+    'b' -> BoosterType.MANIPULATOR
+    'f' -> BoosterType.WHEELS
+    'l' -> BoosterType.DRILL
+    'x' -> BoosterType.UNKNOWN
+    else -> throw IllegalArgumentException()
+}
