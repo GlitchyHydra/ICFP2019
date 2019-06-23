@@ -181,53 +181,41 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
     fun startDrill(): Nothing = TODO()
     fun createClone(): Nothing = TODO()
 
+    fun countDistances(square: Square, offset: Square): Int {
+        val (xOffset, yOffset) = offset
+        var (x, y) = square
+        var painted = 0
+        var all = 0
+        while (y + yOffset in 0 until matrix.size && x + xOffset in 0 until matrix[0].size) {
+            if (matrix[y][x] == 1) all++
+            else if(matrix[y][x] == 2) {
+                painted++
+                all++
+            }
+            y += yOffset
+            x += xOffset
+        }
+        return if (all - painted == 0) 0
+        else all
+    }
+
     // Расчет расстояния от бота до границ
     // Не изменяется матрица = нет учета закрашеных ячеек
     private fun countDistancesToBorders(): Array<Int> {
+        //println(matrix.forEach { println(it.joinToString(separator = " ")) })
         val distances = arrayOf(0, 0, 0, 0) // l, u, r, d
-        val colored = arrayOf(0, 0, 0, 0)
-        val borders = arrayOf(false, false, false, false) // l, u, r, d
-        val x = position.x
-        val y = position.y
-        var index = 1
-        while (!borders.all { it }) {
-            if (matrix[y].size > x + index) { // R
-                if (matrix[y][x + index] > 0 && !borders[2]) {
-                    distances[2]++
-                    if (matrix[y][x + index] == 2) colored[2]++
-                } else
-                    borders[2] = true
-            } else
-                borders[2] = true
-            if (x - index >= 0) { // L
-                if (matrix[y][x - index] > 0 && !borders[0]) {
-                    distances[0]++
-                    if (matrix[y][x - index] == 2) colored[0]++
-                } else
-                    borders[0] = true
-            } else
-                borders[0] = true
-            if (matrix.size > y + index) { // U
-                if (matrix[y + index][x] > 0 && !borders[1]) {
-                    distances[1]++
-                    if (matrix[y + index][x] == 2) colored[1]++
-                } else
-                    borders[1] = true
-            } else
-                borders[1] = true
-            if (y - index >= 0) { // D
-                if (matrix[y - index][x] > 0 && !borders[3]) {
-                    distances[3]++
-                    if (matrix[y - index][x] == 2) colored[3]++
-                } else
-                    borders[3] = true
-            } else
-                borders[3] = true
-            index++
-        }
-        colored.forEachIndexed { ind, it ->
-            if (it == distances[ind])
-                distances[ind] = 0
+        var index = 0
+        for (i in -1..1) {
+            for (j in 1 downTo -1) {
+                if (abs(i + j) == 1) {
+                    distances[index] = countDistances(position, Square(i, j))
+                    when(index) {
+                        1 -> index = 3
+                        3 -> index = 2
+                        else -> index++
+                    }
+                }
+            }
         }
         return distances
     }
@@ -291,14 +279,15 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
     // Поиск соседей
     private fun findAdjacent(point: Square): ArrayList<Square> {
         val adjacent: ArrayList<Square> = arrayListOf()
-        if (matrix.size - 1 > point.y + 1 && matrix[point.y + 1][point.x] > 0)
-            adjacent.add(Square(point.x, point.y + 1))
-        if (point.y - 1 >= 0 && matrix[point.y - 1][point.x] > 0)
-            adjacent.add(Square(point.x, point.y - 1))
-        if (matrix[point.y].size - 1 > point.x + 1 && matrix[point.y][point.x + 1] > 0)
-            adjacent.add(Square(point.x + 1, point.y))
-        if (point.x - 1 >= 0 && matrix[point.y][point.x - 1] > 0)
-            adjacent.add(Square(point.x - 1, point.y))
+        val (x, y) = point
+        for (i in x - 1..x + 1) {
+            for (j in y - 1..y + 1) {
+                if ((x == i || y == j) && point != Square(i, j)) {
+                    if (j in 0 until matrix.size && i in 0 until matrix[0].size)
+                        adjacent.add(Square(i, j))
+                }
+            }
+        }
         return adjacent
     }
 
@@ -349,7 +338,7 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
                 }
                 DOWN -> {
                     moveDown()
-                    if (position.y - 2 >= 0) {
+                    if (position.y >= 2 && position.x >= 0) {
                         if (matrix[position.y - 2][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
