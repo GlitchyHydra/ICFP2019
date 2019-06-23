@@ -1,4 +1,5 @@
-import data.*
+import data.Map.*
+import data.Square
 import java.io.File
 import java.lang.IllegalArgumentException
 import java.util.*
