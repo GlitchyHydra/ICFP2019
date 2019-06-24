@@ -21,6 +21,9 @@ fun main(args: Array<String>) {
             )
         }
     }
+    val solutionDirectory = File("./solutions")
+    if (!solutionDirectory.exists())
+    solutionDirectory.mkdirs()
     for (i in 1..150) {
         val map = mapList[i - 1]
         val bot = Bot(map.start, map.mapInMatrix, map.numberOfUnpainted)
