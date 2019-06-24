@@ -1,6 +1,20 @@
 package data
 
-data class Square(val x: Int, val y: Int)
+data class Square(val x: Int, val y: Int) {
+    override fun equals(other: Any?): Boolean {
+        if (other is Square) {
+            if (this.x == other.x || this.y == other.y)
+                return true
+        }
+        return false
+    }
+
+    override fun hashCode(): Int {
+        var result = x
+        result = 31 * result + y
+        return result
+    }
+}
 
 data class Booster(val square: Square, val type: BoosterType)
 
