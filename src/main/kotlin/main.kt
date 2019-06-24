@@ -5,7 +5,7 @@ import java.util.*
 
 fun main(args: Array<String>) {
     val mapList = LinkedList<ParsedMap>()
-    for (i in 1..300) {
+    for (i in 1..150) {
         val fileName = String.format("tasks/prob-%03d.desc", i)
         File(fileName).readText().split("#").let { parts ->
             mapList.add(
@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
             )
         }
     }
-    for (i in 1..300) {
+    for (i in 1..150) {
         val map = mapList[i - 1]
         val bot = Bot(map.start, map.mapInMatrix, map.numberOfUnpainted)
         val fileName = String.format("solutions/prob-%03d.sol", i)
