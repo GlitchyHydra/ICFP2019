@@ -181,35 +181,40 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
     fun startDrill(): Nothing = TODO()
     fun createClone(): Nothing = TODO()
 
+    fun checkDifference(all: Int, painted: Int): Int = if (all - painted == 0) 0 else all
+
     fun countDistances(square: Square, offset: Square): Int {
         val (xOffset, yOffset) = offset
         var (x, y) = square
         var painted = 0
         var all = 0
         while (y + yOffset in 0 until matrix.size && x + xOffset in 0 until matrix[0].size) {
-            if (matrix[y][x] == 1) all++
-            else if(matrix[y][x] == 2) {
-                painted++
-                all++
-            }
             y += yOffset
             x += xOffset
+            when {
+                matrix[y][x] == 1 -> all++
+                matrix[y][x] == 2 -> {
+                    painted++
+                    all++
+                }
+                matrix[y][x] == 0 -> {
+                    return checkDifference(all, painted)
+                }
+            }
         }
-        return if (all - painted == 0) 0
-        else all
+        return checkDifference(all, painted)
     }
 
     // Расчет расстояния от бота до границ
     // Не изменяется матрица = нет учета закрашеных ячеек
     private fun countDistancesToBorders(): Array<Int> {
-        //println(matrix.forEach { println(it.joinToString(separator = " ")) })
         val distances = arrayOf(0, 0, 0, 0) // l, u, r, d
         var index = 0
         for (i in -1..1) {
             for (j in 1 downTo -1) {
                 if (abs(i + j) == 1) {
                     distances[index] = countDistances(position, Square(i, j))
-                    when(index) {
+                    when (index) {
                         1 -> index = 3
                         3 -> index = 2
                         else -> index++
@@ -260,13 +265,14 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         val visited: Array<BooleanArray> = Array(matrix.size) { BooleanArray(matrix[0].size) { false } }
         val queue: Queue<Square> = ArrayDeque()
         queue.add(position)
-        visited[position.y][position.x] =
-            true // Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1
+        visited[position.y][position.x] = true
         while (!queue.isEmpty()) {
             val el = queue.poll()
             val adjacent = findAdjacent(el)
             for (adjEl in adjacent) {
-                if (matrix[adjEl.y][adjEl.x] == 1) return Square(adjEl.x, adjEl.y)
+                if (matrix[adjEl.y][adjEl.x] == 1) {
+                    return Square(adjEl.x, adjEl.y)
+                }
                 if (!visited[adjEl.y][adjEl.x]) {
                     visited[adjEl.y][adjEl.x] = true
                     queue.add(adjEl)
@@ -293,8 +299,8 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
 
     // Нормализация относительно выбранного пути действия для максимальногоо заполнения поля
     private fun normalizePosition(direction: Direction, distances: Array<Int>) {
-        val diffX = (distances[0] - distances[2]) / 2
-        val diffY = (distances[1] - distances[3]) / 2
+        val diffX = abs(distances[0] - distances[2]) / 2
+        val diffY = abs(distances[1] - distances[3]) / 2
         when (direction) {
             LEFT, RIGHT -> move(diffY, false)
             UP, DOWN -> move(diffX, true)
@@ -314,8 +320,8 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
             when (direction) {
                 UP -> {
                     moveUp()
-                    if (matrix.size - 1 >= position.y + 2) {
-                        if (matrix[position.y + 2][position.x] == 0) {
+                    if (matrix.size - 1 >= position.y + 1) {
+                        if (matrix[position.y + 1][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         }
@@ -326,8 +332,8 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
                 }
                 RIGHT -> {
                     moveRight()
-                    if (matrix[position.y].size - 1 > position.x + 2) {
-                        if (matrix[position.y][position.x + 2] == 0) {
+                    if (matrix[position.y].size - 1 > position.x + 1) {
+                        if (matrix[position.y][position.x + 1] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         }
@@ -338,8 +344,8 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
                 }
                 DOWN -> {
                     moveDown()
-                    if (position.y >= 2 && position.x >= 0) {
-                        if (matrix[position.y - 2][position.x] == 0) {
+                    if (position.y >= 1 && position.x >= 0) {
+                        if (matrix[position.y - 1][position.x] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         }
@@ -350,8 +356,8 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
                 }
                 LEFT -> {
                     moveLeft()
-                    if (position.x - 2 >= 0) {
-                        if (matrix[position.y][position.x - 2] == 0) {
+                    if (position.x - 1 >= 0) {
+                        if (matrix[position.y][position.x - 1] == 0) {
                             distances = countDistancesToBorders()
                             direction = findFarDistance(distances)
                         }
@@ -372,13 +378,4 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
         return path.toString()
     }
 
-    private fun printMatrix(direction: Direction) {
-        for (row in matrix.size - 1 downTo 0) {
-            for (column in matrix[row])
-                print("$column ")
-            println()
-
-        }
-        println("+++++++MOVE:$direction")
-    }
 }

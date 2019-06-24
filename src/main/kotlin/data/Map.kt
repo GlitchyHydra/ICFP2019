@@ -16,7 +16,7 @@ data class ParsedMap(
 ) {
     var numberOfUnpainted = 0
     val mapInMatrix: Array<IntArray>
-        get() = (maxY - 1 downTo 0).map { i -> (1..maxX)
+        get() = (0 until maxY).map { i -> (1..maxX)
             .map { j -> isPointInsideMap(Square(j, i)) }.toIntArray() }.toTypedArray()
 }
 
@@ -24,7 +24,7 @@ fun ParsedMap.isPointInsideMap(point: Square): Int {
     for (booster in boosters) {
         if (booster.square == point) {
             numberOfUnpainted++
-            return booster.type.ordinal + 3
+            return 1
         }
     }
     if (isPointInsidePolygon(point, vertices)) {

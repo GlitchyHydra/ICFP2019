@@ -5,7 +5,7 @@ import java.util.*
 
 fun main(args: Array<String>) {
     val mapList = LinkedList<ParsedMap>()
-    for (i in 1..150) {
+    for (i in 1..300) {
         val fileName = String.format("tasks/prob-%03d.desc", i)
         File(fileName).readText().split("#").let { parts ->
             mapList.add(
@@ -21,13 +21,22 @@ fun main(args: Array<String>) {
             )
         }
     }
-    for (i in 1..150) {
+    for (i in 1..300) {
         val map = mapList[i - 1]
-        //val solution =
         val bot = Bot(map.start, map.mapInMatrix, map.numberOfUnpainted)
         val fileName = String.format("solutions/prob-%03d.sol", i)
+        println(fileName)
         val solution = bot.buildPath()
         File(fileName).writeText(solution)
+    }
+}
+
+private fun Array<IntArray>.printMatrix() {
+    for (i in this.size - 1 downTo 0) {
+        for (j in 0 until this[0].size) {
+            print("${this[i][j]} ")
+        }
+        println()
     }
 }
 
@@ -63,5 +72,5 @@ fun parseBoosterType(char: Char) = when (char.toLowerCase()) {
     'f' -> BoosterType.WHEELS
     'l' -> BoosterType.DRILL
     'x' -> BoosterType.UNKNOWN
-    else -> throw IllegalArgumentException()
+    else -> BoosterType.UNKNOWN
 }

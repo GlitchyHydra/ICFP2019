@@ -18,7 +18,8 @@ fun Square.getNeighbors(map: Array<IntArray>): List<Square> {
         for (j in y - 1..y + 1) {
             if ((x == i || y == j) && this != Square(i, j)) {
                 if (j in 0 until map.size && i in 0 until map[0].size)
-                    adj.add(Square(i, j))
+                    if (map[j][i] != 0)
+                        adj.add(Square(i, j))
             }
         }
     }
@@ -50,6 +51,7 @@ fun shortestPath(from: Square, map: Array<IntArray>): Map<Square, SquareInfo> {
             }
         }
     }
+
     return info
 }
 
