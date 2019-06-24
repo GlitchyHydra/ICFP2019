@@ -31,15 +31,6 @@ fun main(args: Array<String>) {
     }
 }
 
-private fun Array<IntArray>.printMatrix() {
-    for (i in this.size - 1 downTo 0) {
-        for (j in 0 until this[0].size) {
-            print("${this[i][j]} ")
-        }
-        println()
-    }
-}
-
 private fun parseMap(input: String): List<Square> =
     parseSquares(input)
 
