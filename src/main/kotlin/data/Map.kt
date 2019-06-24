@@ -1,20 +1,6 @@
 package data
 
-data class Square(val x: Int, val y: Int) {
-    override fun equals(other: Any?): Boolean {
-        if (other is Square) {
-            if (this.x == other.x || this.y == other.y)
-                return true
-        }
-        return false
-    }
-
-    override fun hashCode(): Int {
-        var result = x
-        result = 31 * result + y
-        return result
-    }
-}
+data class Square(val x: Int, val y: Int)
 
 data class Booster(val square: Square, val type: BoosterType)
 
@@ -38,7 +24,7 @@ fun ParsedMap.isPointInsideMap(point: Square): Int {
     for (booster in boosters) {
         if (booster.square == point) {
             numberOfUnpainted++
-            return 1
+            return booster.type.ordinal + 3
         }
     }
     if (isPointInsidePolygon(point, vertices)) {
@@ -72,5 +58,7 @@ enum class BoosterType(str: String) {
     MANIPULATOR("B"),
     WHEELS("F"),
     DRILL("L"),
+    TELEPORT("R"),
+    CLONE("C"),
     UNKNOWN("X");
 }
