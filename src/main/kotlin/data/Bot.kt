@@ -309,6 +309,42 @@ data class Bot(var position: Square, val matrix: Array<IntArray>, val blankCount
 
     }
 
+    fun canReach(botBody: Square, target: Square): Boolean {
+        //поиск всех клеток, которые пересекает линия, проходящая от центра botBody до центра target
+        val intersectedSquares = intersectedSquares(botBody, target)
+
+        //проверка, есть ли в пересеченных клетках препятсвие
+        intersectedSquares.forEach {
+            if (matrix[it.x][it.y] == 0)
+                return false
+        }
+        return true
+    }
+
+    fun intersectedSquares(botBody: Square, target: Square): List<Square> {
+        //составляется полный список клеток в прямоугольнике с диагональю botBody - target
+        var fullList = mutableListOf<Square>()
+        val rangeX = if (botBody.x <= target.x) botBody.x..target.x else botBody.x downTo target.x
+        val rangeY = if (botBody.y <= target.y) botBody.y..target.y else botBody.y downTo target.y
+        for (x in (rangeX))
+            for (y in (rangeY)) {
+                fullList.add(Square(x, y))
+            }
+
+        val middleX = (botBody.x + target.x).toFloat() / 2
+        val middleY = (botBody.y + target.y).toFloat() / 2
+
+        //отсеиваются из полного списка не подходящие клетки
+        return if (botBody.x <= target.x && botBody.y <= target.y)
+            fullList.filter { (it.x <= middleX) && (it.y <= middleY) || (it.x >= middleX) && (it.y >= middleY) }
+        else if (botBody.x <= target.x && botBody.y >= target.y)
+            fullList.filter { (it.x <= middleX) && (it.y >= middleY) || (it.x >= middleX) && (it.y <= middleY) }
+        else if (botBody.x >= target.x && botBody.y <= target.y)
+            fullList.filter { (it.x >= middleX) && (it.y <= middleY) || (it.x <= middleX) && (it.y >= middleY) }
+        else
+            fullList.filter { (it.x >= middleX) && (it.y >= middleY) || (it.x <= middleX) && (it.y <= middleY) }
+    }
+
     // Построение пути и вывод строоки
     fun buildPath(): String {
         var stop = true
